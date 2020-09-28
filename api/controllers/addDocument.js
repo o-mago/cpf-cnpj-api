@@ -9,13 +9,19 @@ module.exports = async (req, res, next) => {
     return res.status(422).json("Invalid document");
   }
 
-  const client = req.app.get('client');
+  let formatedDoc = req.body.document.replace(/\D/g,"");
+
+  const MongoClient = require('mongodb').MongoClient;
+
+  const uri = process.env.DB_URI;
+
+  const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
   
   let result = null;
 
   try {
     await client.connect();
-    result = await insertDoc(client, req.body.document);
+    result = await insertDoc(client, formatedDoc);
   } catch(err) {
     return res.status(500).json("Internal error");
   } finally {

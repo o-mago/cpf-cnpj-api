@@ -2,8 +2,6 @@ module.exports = (document) => {
   let formatedDoc = document.replace(/\D/g,"");
   if(formatedDoc.length === 11 || formatedDoc.length === 14) {
     return calcDigit(formatedDoc, 1);
-  } else if(formatedDoc.length === 0) {
-    return true;
   } else {
     return false;
   }
@@ -16,10 +14,19 @@ function calcDigit(document, digitPosition) {
   let docRemainder = document.slice(0, slicePosition);
 
   let numberProportion = 0;
-  const proportion = 9+digitPosition;
   const divider = 11;
-  for(let i = 0; i < docRemainder.length; i++) {
-    numberProportion += parseInt(docRemainder.charAt(i)) * (proportion-i); 
+  if(document.length === 11) {
+    const proportion = 9+digitPosition;
+    for(let i = 0; i < docRemainder.length; i++) {
+      numberProportion += parseInt(docRemainder.charAt(i)) * (proportion-i); 
+    }
+  } else {
+    docRemainder = reverseString(docRemainder);
+    let proportion = 2;
+    for(let i = 0; i < docRemainder.length; i++) {
+      numberProportion += parseInt(docRemainder.charAt(i)) * (proportion);
+      proportion = proportion < 9 ? proportion+1 : 2; 
+    }
   }
 
   let reminder = numberProportion % divider;
@@ -41,4 +48,8 @@ function calcDigit(document, digitPosition) {
   }
 
   return true;
+}
+
+function reverseString(str) {
+  return str.split("").reverse().join("");
 }

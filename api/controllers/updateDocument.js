@@ -9,7 +9,11 @@ module.exports = async (req, res, next) => {
     return res.status(400).json("Missing blacklist");
   }
 
-  const client = req.app.get('client');
+  const MongoClient = require('mongodb').MongoClient;
+
+  const uri = process.env.DB_URI;
+
+  const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
   let result = null;
 
@@ -25,7 +29,6 @@ module.exports = async (req, res, next) => {
 }
 
 async function updateDoc(client, payload) {
-  console.log(payload);
   let document = await client.db('cpfCnpjDb').collection('document').updateOne(
     { _id: ObjectID(payload._id) },
     { $set: { blacklist: payload.blacklist } }
