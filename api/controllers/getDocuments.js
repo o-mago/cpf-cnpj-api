@@ -22,8 +22,14 @@ module.exports = async (req, res, next) => {
 }
 
 async function listDocuments(client, query, sort, limitPerPage, skips) {
-  let documentList = await client.db('cpfCnpjDb').collection('document').find(query).sort(sort).skip(skips).limit(limitPerPage).toArray();
-  return documentList;
+  let documentsCol = await client.db('cpfCnpjDb').collection('document').find(query);
+  let documentList = await documentsCol.sort(sort).skip(skips).limit(limitPerPage).toArray();
+  let totalDocuments = await documentsCol.count();
+  let lastPage = Math.ceil(totalDocuments/limitPerPage);
+  return {
+    docs: documentList, 
+    lastPage: lastPage
+  }
 };
 
 function buildQuery(req) {
@@ -36,33 +42,22 @@ function buildQuery(req) {
   if(req.hasOwnProperty('blacklist') && typeof req.blacklist === 'boolean' && req.blacklist) {
     query["blacklist"] = req.blacklist;
   }
-  if(req.hasOwnProperty('cpf') && typeof req.cpf === 'boolean' && req.cpf) {
-    if(!query.hasOwnProperty("$or")) {
-      query["$or"] = [];
-    }
-    query["$or"].push({
-      "$expr":{
-        "$eq": [
-          {
-            "$strLenCP": "$document"
-          },
-          11
-        ]
-      }
-    });
-  }
-  if(req.hasOwnProperty('cnpj') && typeof req.cnpj === 'boolean' && req.cnpj) {
-    if(!query.hasOwnProperty("$or")) {
-      query["$or"] = [];
-    }
-    query["$or"].push({
-      "$expr":{
-        "$eq": [
-          {
-            "$strLenCP": "$document"
-          },
-          14
-        ]
+  if(req.hasOwnProperty('filter') && req.filter && Array.isArray(req.filter)) {
+    req.filter.forEach(elem => {
+      if(elem === "cpf" || elem === "cnpj") {
+        if(!query.hasOwnProperty("$or")) {
+          query["$or"] = [];
+        }
+        query["$or"].push({
+          "$expr": {
+            "$eq": [
+              {
+                "$strLenCP": "$document"
+              },
+              elem === "cpf" ? 11 : 14
+            ]
+          }
+        });
       }
     });
   }
