@@ -14,6 +14,7 @@ module.exports = () => {
   require('../api/routes/getDocuments')(app);
   require('../api/routes/addDocument')(app);
   require('../api/routes/updateDocument')(app);
+  require('../api/routes/status')(app);
 
   return app;
 };

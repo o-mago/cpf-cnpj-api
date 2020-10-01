@@ -1,19 +1,14 @@
-const { ObjectID } = require('mongodb');
-
 module.exports = async (req, res, next) => {
   const MongoClient = require('mongodb').MongoClient;
 
   const uri = process.env.DB_URI;
 
   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+
   let result = null;
-  let [query, sort] = req.body ? buildQuery(req.body) : [{}, {}];
-  let pageNumber = req.body && req.body.page ? req.body.page : 1;
-  let limitPerPage = req.body && req.body.limit ? req.body.limit : 20;
-  let skips = (pageNumber-1) * limitPerPage;
   try {
     await client.connect();
-    result = await listDocuments(client, query, sort, limitPerPage, skips);
+    result = await getStatus(client);
   } catch(err) {
     return res.status(500).json("Internal error");
   } finally {
@@ -22,20 +17,11 @@ module.exports = async (req, res, next) => {
   }
 }
 
-async function listDocuments(client, query, sort, limitPerPage, skips) {
-  let documentsCol = await client.db('cpfCnpjDb').collection('document').find(query);
-  let documentList = await documentsCol.sort(sort).skip(skips).limit(limitPerPage).toArray();
-  let totalDocuments = await documentsCol.count();
-  let lastPage = Math.ceil(totalDocuments/limitPerPage);
+async function getStatus(client) {
   let nQueries = await client.db('cpfCnpjDb').collection('stats').findOne({ queries : { $exists : true } });
-  let newNQqueries = (parseInt(nQueries.queries)+1).toString();
-  await client.db('cpfCnpjDb').collection('stats').updateOne(
-    { _id: ObjectID(nQueries._id) },
-    { $set: { queries: newNQqueries } }
-  );
   return {
-    docs: documentList, 
-    lastPage: lastPage
+    queries: nQueries.queries, 
+    upTime: process.uptime()+"s"
   }
 };
 
